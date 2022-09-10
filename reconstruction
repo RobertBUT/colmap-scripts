@@ -1,0 +1,58 @@
+#!/bin/bash
+echo '----' >> file.csv
+declare -a tar=()
+i=2
+while [ $i -lt 18 ]
+do
+     DATASET_PATH="/home/robert/colmap"/$i
+     rm -R $DATASET_PATH/sparse
+     mkdir $DATASET_PATH/sparse
+
+     colmap mapper \
+     --database_path $DATASET_PATH/empty.db \
+     --image_path $DATASET_PATH/images \
+     --output_path $DATASET_PATH/sparse \
+     --Mapper.init_min_tri_angle 5 \
+     --Mapper.init_max_forward_motion 1 \
+     --Mapper.tri_continue_max_angle_error 1 \
+     --Mapper.tri_create_max_angle_error 1 \
+     --Mapper.tri_min_angle 0.1 \
+     --Mapper.filter_max_reproj_error 8.5 \
+     --Mapper.filter_min_tri_angle 5.5 \
+     #--Mapper.min_focal_length_ratio 0.32 \
+     #--Mapper.max_focal_length_ratio 4
+
+     colmap model_converter \
+     --input_path $DATASET_PATH/sparse/0 \
+     --output_path $DATASET_PATH/sparse/0 \
+     --output_type TXT 
+
+     if test -f "$DATASET_PATH/sparse/0/cameras.txt"; then
+     	str="$(head "$DATASET_PATH/sparse/0/cameras.txt" | tail -n 1)"
+	read -a arr<<<$str
+	echo  ${arr[4]} | awk '{printf("%.2f \n",$1)}' >> file.csv
+	a=${arr[4]}
+	#a=${a/./,}
+	tar+=($a)
+     else
+        echo '-' >> file.csv
+     fi
+i=$(( $i + 1 ))
+done
+for k in ${tar[@]}; do echo $k; done
+median() {
+  arr=($(printf '%d\n' "${@}" | sort -n))
+  nel=${#arr[@]}
+  if (( $nel % 2 == 1 )); then     
+    val="${arr[ $(($nel/2)) ]}"
+  else                            
+    (( j=nel/2 ))
+    (( k=j-1 ))
+    (( val=(${arr[j]} + ${arr[k]})/2 ))
+  fi
+  echo $val
+}
+median ${tar[@]}
+u=$(median ${tar[@]})
+echo "Median= " $u >> file.csv
+

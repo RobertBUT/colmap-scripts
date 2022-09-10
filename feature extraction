@@ -1,0 +1,22 @@
+#!/bin/bash
+i=2
+while [ $i -lt 18 ]
+do
+     DATASET_PATH="/home/robert/colmap"/$i
+     rm -R $DATASET_PATH/empty.db
+     cp -u /home/robert/colmap/empty.db $DATASET_PATH/
+     sudo colmap feature_extractor \
+     --database_path $DATASET_PATH/"empty.db" \
+     --image_path $DATASET_PATH/"images" \
+     --ImageReader.mask_path $DATASET_PATH/"masks" \
+     --ImageReader.camera_model SIMPLE_RADIAL \
+     --ImageReader.single_camera true \
+     --ImageReader.single_camera_per_image true
+     #--ImageReader.camera_params "2476,1024,768,0" 
+     
+
+     sudo colmap exhaustive_matcher \
+     --database_path $DATASET_PATH/"empty.db"
+i=$(( $i + 1 ))
+done
+
